@@ -5,11 +5,11 @@ with open('README.md') as fh:
 
 setup(
     name="aws_toolset",
-    version="0.0.1",
+    version="0.0.3",
     url='https://github.com/sgcooper78/aws_toolset',
     author="Scott Cooper",
     author_email="sgcooper78@gmail.com",
-    description="AWS Toolkit for AWS Devs",
+    description="AWS Toolset for AWS Devs",
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=find_packages(),
