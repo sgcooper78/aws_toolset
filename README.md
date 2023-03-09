@@ -1,11 +1,11 @@
 
   
 
-# aws_toolkit
+# aws_toolset
 
   
 
-AWS Toolkit
+AWS Toolset
 
   
 
@@ -21,17 +21,17 @@ As I find these I am putting these here for the other developers to use so they 
 
 The tool can be ran directory as a CLI or with the python -m interface or installed with pip.
 
-    pip install aws_toolkit
+    pip install aws_toolset
 
 or
 
-    aws_toolkit module
+    aws_toolset module
 
 or
 
   
 
-    python3 -m aws_toolkit module
+    python3 -m aws_toolset module
 
   
 
@@ -43,8 +43,8 @@ If you need to import then
 
   
 
-    from aws_toolkit import aws_toolkit
-    from aws_toolkit.module import create_codestar_notifications
+    from aws_toolset import aws_toolset
+    from aws_toolset.module import create_codestar_notifications
 
   
 
