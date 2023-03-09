@@ -5,7 +5,7 @@ with open('README.md') as fh:
 
 setup(
     name="aws_toolkit",
-    version="0.0.1",
+    version="0.0.2",
     url='https://github.com/sgcooper78/aws_toolkit',
     author="Scott Cooper",
     author_email="sgcooper78@gmail.com",
