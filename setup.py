@@ -4,9 +4,9 @@ with open('README.md') as fh:
     long_description = fh.read()
 
 setup(
-    name="aws_toolkit",
+    name="aws_toolset",
     version="0.0.1",
-    url='https://github.com/sgcooper78/aws_toolkit',
+    url='https://github.com/sgcooper78/aws_toolset',
     author="Scott Cooper",
     author_email="sgcooper78@gmail.com",
     description="AWS Toolkit for AWS Devs",
@@ -20,6 +20,6 @@ setup(
     "License :: OSI Approved :: GNU Affero General Public License v3",
     "Operating System :: OS Independent",
     ],
-    entry_points={'console_scripts': ['aws_toolkit = aws_toolkit.aws_toolkit:main']},
+    entry_points={'console_scripts': ['aws_toolset = aws_toolset.aws_toolset:main']},
     include_package_data=True
 )
