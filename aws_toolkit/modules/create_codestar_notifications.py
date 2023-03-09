@@ -1,5 +1,5 @@
 import boto3, inquirer, sys, json
-from .. import utils
+from utils import *
 
 def args_definitions(subparser):
     sub_subparser = subparser.add_parser('create_codestar_notifications', help='help for creating codestar notifications')
@@ -131,11 +131,11 @@ def main(args):
             filter_resources = inquirer.prompt(further_filter_resources_questions)
             
             if filter_resources["choice"] == "resource_name":
-                args.Resource = utils.get_sort_resources_by_regex(answers_resources["resourse"],filter_resources["filter_value"])
+                args.Resource = get_sort_resources_by_regex(answers_resources["resourse"],filter_resources["filter_value"])
             elif filter_resources["choice"] == "tags":
-                args.Resource = utils.get_sort_resources_by_tag(answers_resources["resourse"],json.loads(filter_resources["filter_value"]))
+                args.Resource = get_sort_resources_by_tag(answers_resources["resourse"],json.loads(filter_resources["filter_value"]))
         else:
-            args.Resource = utils.get_all_resource_names(answers_resources["resourse"])
+            args.Resource = get_all_resource_names(answers_resources["resourse"])
         print(args.Resource)
     else:
         args.Resource.append(args.Resource)
@@ -168,7 +168,7 @@ def main(args):
     for resource in args.Resource:
         resouce_arn = ""
         if main_resource:
-            resouce_arn = f"arn:aws:{main_resource}:us-east-1:{utils.get_account_id()}:{resource}"
+            resouce_arn = f"arn:aws:{main_resource}:us-east-1:{get_account_id()}:{resource}"
         else:
             resouce_arn = resource
         codestar_notifications_arns.append(make_codestar_notifications(f"{resource}{args.Name}", args.EventTypeIds, resouce_arn, args.TargetType, args.TargetAddress, args.DetailType, args.status ,args.tags))
