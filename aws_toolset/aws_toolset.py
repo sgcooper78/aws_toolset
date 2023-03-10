@@ -2,7 +2,7 @@ import argparse, importlib
 import importlib.util
 
 #Module Imports 
-import modules.create_codestar_notifications as create_codestar_notifications
+from .modules import create_codestar_notifications
 
 def create_dict_modules():
     modules = {}
