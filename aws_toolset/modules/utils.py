@@ -7,50 +7,34 @@ def get_account_id():
     
 def get_all_resource_names(resource_type):
     # Create a client for the appropriate resource type
+    client = boto3.client(resource_type)
+
     if resource_type == 'codecommit':
-        client = boto3.client('codecommit')
         resource_list = 'repositories'
         resource_key = 'repositoryName'
-        list_function = client.list_repositories
+        paginator = client.get_paginator('list_repositories')
     elif resource_type == 'codebuild':
-        client = boto3.client('codebuild')
         resource_list = 'projects'
         resource_key = 'projects'
-        list_function = client.list_projects
+        paginator = client.get_paginator('list_projects')
     elif resource_type == 'codedeploy':
-        client = boto3.client('codedeploy')
         resource_list = 'applications'
         resource_key = 'application'
-        list_function = client.list_applications
+        paginator = client.get_paginator('list_applications')
     elif resource_type == 'codepipeline':
-        client = boto3.client('codepipeline')
         resource_list = 'pipelines'
         resource_key = 'name'
-        list_function = client.list_pipelines
+        paginator = client.get_paginator('list_pipelines')
     else:
         raise ValueError(f"Invalid resource type '{resource_type}'")
 
     all_resources_names = []
-    next_token = None
 
-    while True:
-        # Call the appropriate function with the nextToken parameter if there are more pages
-        if next_token:
-            response = list_function(nextToken=next_token)
-        else:
-            response = list_function()
-
-        # Add the names of the resources to the list
+    for page in paginator.paginate():
         if not resource_type == 'codebuild' and not resource_type == 'codedeploy':
-            all_resources_names.extend([resource[resource_key] for resource in response[resource_list]])
+                all_resources_names.extend([resource[resource_key] for resource in page[resource_list]])
         else:
-            all_resources_names.extend(response[resource_list])
-
-        # Check if there are more pages to retrieve
-        if 'nextToken' in response:
-            next_token = response['nextToken']
-        else:
-            break
+            all_resources_names.extend(page[resource_list])
 
     return all_resources_names
 
