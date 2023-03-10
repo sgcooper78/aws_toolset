@@ -28,14 +28,13 @@ def get_all_resource_names(resource_type):
     else:
         raise ValueError(f"Invalid resource type '{resource_type}'")
 
-    response_iterator = paginator.paginate()
-
     all_resources_names = []
 
-    if not resource_type == 'codebuild' and not resource_type == 'codedeploy':
-            all_resources_names.extend([resource[resource_key] for resource in response_iterator[resource_list]])
-    else:
-        all_resources_names.extend(response_iterator[resource_list])
+    for page in paginator.paginate():
+        if not resource_type == 'codebuild' and not resource_type == 'codedeploy':
+                all_resources_names.extend([resource[resource_key] for resource in page[resource_list]])
+        else:
+            all_resources_names.extend(page[resource_list])
 
     return all_resources_names
 
