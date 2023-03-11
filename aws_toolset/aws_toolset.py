@@ -2,11 +2,14 @@ import argparse, importlib
 import importlib.util
 
 #Module Imports 
-from .modules import create_codestar_notifications
+from modules import create_codestar_notifications
+from modules import get_ec2_ecs_info
 
 def create_dict_modules():
     modules = {}
     modules["create_codestar_notifications"] = create_codestar_notifications
+    modules["get_ec2_ecs_info"] = get_ec2_ecs_info
+
     return modules
 
 def parameters_definitions(parser):
