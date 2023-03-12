@@ -37,7 +37,7 @@ def main():
     modules = create_dict_modules()
 
     try:
-        modules[args.Module].main(args)
+        modules[args.Module].run(args)
     except AttributeError:
         print(f"There is no such attribute for {modules[args.Module]}")
 

@@ -1,5 +1,5 @@
-import boto3, inquirer, sys, json
-from .utils import *
+import boto3, inquirer, sys, json, argparse
+from utils import *
 
 def args_definitions(subparser):
     sub_subparser = subparser.add_parser('create_codestar_notifications', help='help for creating codestar notifications')
@@ -96,7 +96,7 @@ def make_codestar_notifications(name: str, event_type_ids: list, resource: str, 
 
     return response['Arn']
 
-def main(args):
+def run(args):
     main_resource = ''
     if not args.Resource:
         print("no user resource detected, helping user generate them")
@@ -175,5 +175,16 @@ def main(args):
     print("here is all the arns of the notifications")
     print(codestar_notifications_arns)
 
+def main():
+    parser = argparse.ArgumentParser()
+
+    subparser = parser.add_subparsers(dest="Module",title='Modules',description='List of Modules',help='List of modules')
+
+    args_definitions(subparser)
+
+    args = parser.parse_args()
+
+    run(args)
+
 if __name__ == "__main__":
-    main(args)
+    main()

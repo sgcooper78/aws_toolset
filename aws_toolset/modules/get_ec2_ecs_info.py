@@ -1,5 +1,5 @@
-import boto3, inquirer, sys, json
-from .utils import *
+import boto3, inquirer, sys, json, argparse
+from utils import *
 
 def args_definitions(subparser):
     sub_subparser = subparser.add_parser('get_ec2_ecs_info', help='help for getting EC2 info from ecs')
@@ -10,7 +10,7 @@ def args_definitions(subparser):
     sub_subparser.add_argument("--s','--servicename",dest="Service",help="Service Name to use to get EC2 information")
     # sub_subparser.add_argument("--c','--cluster",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
 
-def main(args):
+def run(args):
     if not args.Service:
         if not args.Cluster:
             print("no user resource detected for cluster, helping user generate them")
@@ -75,5 +75,43 @@ def main(args):
 
     print(args.Service)
 
+    ec2_container_instances_arns = get_all_resource_names("ecs","ecs_container_instances",{"cluster" : args.Cluster})
+
+    ecs_client = boto3.client('ecs')
+
+    ec2_container_instances = ecs_client.describe_container_instances(
+        cluster=args.Cluster,
+        containerInstances=ec2_container_instances_arns
+    )
+    tasks = []
+    for instance in ec2_container_instances['containerInstances']:
+        if instance['ec2InstanceId'] == "EC2":
+
+            # List tasks on this container instance
+            task_list_response = ecs_client.list_tasks(
+                cluster=args.Cluster,
+                containerInstance=instance['containerInstanceArn']
+            )
+
+            # Describe tasks
+            task_descriptions_response = ecs_client.describe_tasks(
+                cluster=args.Cluster,
+                tasks=task_list_response['taskArns']
+            )
+
+            tasks.append(task_descriptions_response)
+    print(tasks)
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    subparser = parser.add_subparsers(dest="Module",title='Modules',description='List of Modules',help='List of modules')
+
+    args_definitions(subparser)
+
+    args = parser.parse_args()
+
+    run(args)
+
 if __name__ == "__main__":
-    main(args)
+    main()
