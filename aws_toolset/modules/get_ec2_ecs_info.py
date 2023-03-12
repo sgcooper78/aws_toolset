@@ -11,25 +11,27 @@ def args_definitions(subparser):
     # sub_subparser.add_argument("--c','--cluster",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
 
 def main(args):
-    main_resource = ''
-    if not args.Cluster:
-        print("no user resource detected, helping user generate them")
-        resources_questions = [
-            inquirer.List(
-                "resourse",
-                message="What Cluster would you like to use to narrow down services?",
-                choices=["codecommit", "codebuild","codedeploy","codepipeline"],
-            ),
-        ]
+    if not args.Service:
+        if not args.Cluster:
+            print("no user resource detected for cluster, helping user generate them")
+            clusters = get_all_resource_names("ecs_clusters")
+            cluster_questions = [
+                inquirer.List(
+                    "cluster",
+                    message="What Cluster would you like to use to narrow down services?",
+                    choices=clusters,
+                ),
+            ]
 
-        answers_resources = inquirer.prompt(resources_questions)
-        main_resource = answers_resources["resourse"]
+            answers_cluster = inquirer.prompt(cluster_questions)
+            args.Cluster =  answers_cluster["clusters"]
+
         further_filter_question = [
-            inquirer.Confirm("filter", message=f"Would you like to filter down further than all?", default=False),
+            inquirer.Confirm("filter", message=f"Would you like to filter down Services further than all in the cluster?", default=False),
         ]
-
         further_filter_bool = inquirer.prompt(further_filter_question)
 
+        services = []
         if further_filter_bool["filter"]:
             further_filter_resources_questions = [
                 inquirer.List(
@@ -43,19 +45,29 @@ def main(args):
             ]
 
             filter_resources = inquirer.prompt(further_filter_resources_questions)
-            
+                
             if filter_resources["choice"] == "resource_name":
-                args.Resource = get_sort_resources_by_regex(answers_resources["resourse"],filter_resources["filter_value"])
+                services = get_sort_resources_by_regex("ecs_services",filter_resources["filter_value"],{"cluster" : args.Cluster})
             elif filter_resources["choice"] == "tags":
-                args.Resource = get_sort_resources_by_tag(answers_resources["resourse"],json.loads(filter_resources["filter_value"]))
+                services = get_sort_resources_by_tag("ecs_services",json.loads(filter_resources["filter_value"]),{"cluster" : args.Cluster})
+            else:
+                services = get_all_resource_names("ecs_services",{"cluster" : args.Cluster})
+            print(services)
         else:
-            args.Resource = get_all_resource_names(answers_resources["resourse"])
-        print(args.Resource)
-    else:
-        args.Resource.append(args.Resource)
+            services = get_all_resource_names("ecs_services", args.Cluster)
 
-    
+        service_question = [
+            inquirer.List(
+                "service",
+                message="What Service would you like info about?",
+                choices=services,
+            ),
+        ]
 
+        answers_service = inquirer.prompt(service_question)
+        args.Service =  answers_service["clusters"]
+
+    print(args.Service)
 
 if __name__ == "__main__":
     main(args)

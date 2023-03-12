@@ -5,41 +5,50 @@ def get_account_id():
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sts/client/get_caller_identity.html
     return sts_client.get_caller_identity().get('Account')
     
-def get_all_resource_names(resource_type):
+def get_all_resource_names(resource_type,options = {}):
     # Create a client for the appropriate resource type
     client = boto3.client(resource_type)
 
-    if resource_type == 'codecommit':
-        resource_list = 'repositories'
-        resource_key = 'repositoryName'
-        paginator = client.get_paginator('list_repositories')
-    elif resource_type == 'codebuild':
-        resource_list = 'projects'
-        resource_key = 'projects'
-        paginator = client.get_paginator('list_projects')
-    elif resource_type == 'codedeploy':
-        resource_list = 'applications'
-        resource_key = 'application'
-        paginator = client.get_paginator('list_applications')
-    elif resource_type == 'codepipeline':
-        resource_list = 'pipelines'
-        resource_key = 'name'
-        paginator = client.get_paginator('list_pipelines')
-    else:
-        raise ValueError(f"Invalid resource type '{resource_type}'")
+    match resource_type:
+        case "codecommit":
+            resource_list = 'repositories'
+            resource_key = 'repositoryName'
+            paginator = client.get_paginator('list_repositories')
+        case "codebuild":
+            resource_list = 'projects'
+            resource_key = 'projects'
+            paginator = client.get_paginator('list_projects')
+        case "codedeploy":
+            resource_list = 'applications'
+            resource_key = 'application'
+            paginator = client.get_paginator('list_applications')
+        case "codepipeline":
+            resource_list = 'pipelines'
+            resource_key = 'name'
+            paginator = client.get_paginator('list_pipelines')
+        case "ecs_clusters":
+            resource_list = 'clusterArns'
+            resource_key = 'cluster'
+            paginator = client.get_paginator('list_clusters')
+        case "ecs_services":
+            resource_list = 'serviceArns'
+            resource_key = 'service'
+            paginator = client.get_paginator('list_services',cluster=options['cluster'],)
+        case _:
+            raise ValueError(f"Invalid resource type '{resource_type}'")
 
     all_resources_names = []
 
     for page in paginator.paginate():
-        if not resource_type == 'codebuild' and not resource_type == 'codedeploy':
+        if not resource_type == 'codebuild' and not resource_type == 'codedeploy' and not resource_type == 'ecs_clusters' and not resource_type == 'ecs_services':
                 all_resources_names.extend([resource[resource_key] for resource in page[resource_list]])
         else:
             all_resources_names.extend(page[resource_list])
 
     return all_resources_names
 
-def get_sort_resources_by_regex(service_name, regex_pattern):
-    resource_names = get_all_resource_names(service_name)
+def get_sort_resources_by_regex(service_name, regex_pattern,options = {}):
+    resource_names = get_all_resource_names(service_name,options)
     
     # Filter the resource names based on the regex pattern
     matching_resources = [name for name in resource_names if re.search(regex_pattern, name)]
@@ -47,7 +56,7 @@ def get_sort_resources_by_regex(service_name, regex_pattern):
     # Return the sorted resource names
     return matching_resources
 
-def get_sort_resources_by_tag(service_name, tags_dict):
+def get_sort_resources_by_tag(service_name, tags_dict, options = {}):
     """
     Checks if resources in a given service have all specified tags.
     
