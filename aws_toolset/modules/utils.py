@@ -5,11 +5,11 @@ def get_account_id():
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sts/client/get_caller_identity.html
     return sts_client.get_caller_identity().get('Account')
     
-def get_all_resource_names(resource_type,options = {}):
+def get_all_resource_names(resource_name,resource_call,options = {}):
     # Create a client for the appropriate resource type
-    client = boto3.client(resource_type)
+    client = boto3.client(resource_name)
 
-    match resource_type:
+    match resource_call:
         case "codecommit":
             resource_list = 'repositories'
             resource_key = 'repositoryName'
@@ -35,12 +35,12 @@ def get_all_resource_names(resource_type,options = {}):
             resource_key = 'service'
             paginator = client.get_paginator('list_services',cluster=options['cluster'],)
         case _:
-            raise ValueError(f"Invalid resource type '{resource_type}'")
+            raise ValueError(f"Invalid resource type '{resource_name}'")
 
     all_resources_names = []
 
     for page in paginator.paginate():
-        if not resource_type == 'codebuild' and not resource_type == 'codedeploy' and not resource_type == 'ecs_clusters' and not resource_type == 'ecs_services':
+        if not resource_name == 'codebuild' and not resource_name == 'codedeploy' and not resource_name == 'ecs_clusters' and not resource_name == 'ecs_services':
                 all_resources_names.extend([resource[resource_key] for resource in page[resource_list]])
         else:
             all_resources_names.extend(page[resource_list])

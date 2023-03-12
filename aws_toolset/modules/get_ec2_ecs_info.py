@@ -6,15 +6,17 @@ def args_definitions(subparser):
     #required
     # sub_subparser.add_argument("--ta","--targetaddress",dest="TargetAddress",help="REQUIRED: The Amazon Resource Name (ARN) of the Chatbot topic or Chatbot client.", required = True)
     #optional
-    sub_subparser.add_argument("--c','--cluster", dest="Cluster",help="Cluster to filter by")
-    sub_subparser.add_argument("--s','--servicename",dest="ServiceName",help="Service Name to use to get EC2 information")
+    sub_subparser.add_argument("--c','--cluster",default='', dest="Cluster",help="Cluster to filter by")
+    sub_subparser.add_argument("--s','--servicename",dest="Service",help="Service Name to use to get EC2 information")
     # sub_subparser.add_argument("--c','--cluster",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
 
 def main(args):
     if not args.Service:
         if not args.Cluster:
             print("no user resource detected for cluster, helping user generate them")
-            clusters = get_all_resource_names("ecs_clusters")
+            clusters = get_all_resource_names("ecs","ecs_clusters")
+            # if not args.Cluster:
+            #     sys.exit("No Clusters detected")
             cluster_questions = [
                 inquirer.List(
                     "cluster",
@@ -25,6 +27,10 @@ def main(args):
 
             answers_cluster = inquirer.prompt(cluster_questions)
             args.Cluster =  answers_cluster["clusters"]
+        
+        print(args.Cluster)
+        if not args.Cluster:
+            sys.exit("No Cluster detected")
 
         further_filter_question = [
             inquirer.Confirm("filter", message=f"Would you like to filter down Services further than all in the cluster?", default=False),
@@ -47,14 +53,14 @@ def main(args):
             filter_resources = inquirer.prompt(further_filter_resources_questions)
                 
             if filter_resources["choice"] == "resource_name":
-                services = get_sort_resources_by_regex("ecs_services",filter_resources["filter_value"],{"cluster" : args.Cluster})
+                services = get_sort_resources_by_regex("ecs","ecs_services",filter_resources["filter_value"],{"cluster" : args.Cluster})
             elif filter_resources["choice"] == "tags":
-                services = get_sort_resources_by_tag("ecs_services",json.loads(filter_resources["filter_value"]),{"cluster" : args.Cluster})
+                services = get_sort_resources_by_tag("ecs","ecs_services",json.loads(filter_resources["filter_value"]),{"cluster" : args.Cluster})
             else:
-                services = get_all_resource_names("ecs_services",{"cluster" : args.Cluster})
+                services = get_all_resource_names("ecs","ecs_services",{"cluster" : args.Cluster})
             print(services)
         else:
-            services = get_all_resource_names("ecs_services", args.Cluster)
+            services = get_all_resource_names("ecs","ecs_services", args.Cluster)
 
         service_question = [
             inquirer.List(

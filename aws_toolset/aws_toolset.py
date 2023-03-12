@@ -39,7 +39,7 @@ def main():
     try:
         modules[args.Module].main(args)
     except AttributeError:
-        print(f"There is no such attribute for {module}")
+        print(f"There is no such attribute for {modules[args.Module]}")
 
 if __name__ == "__main__":
     main()
