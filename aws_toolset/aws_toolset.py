@@ -18,7 +18,7 @@ def parameters_definitions(parser):
 
     for module in modules:
         try:
-            modules[module].args_definitions(parser)
+            modules[module].subparser_args_definitions(parser)
         except AttributeError:
             # print(f"There is no such attribute for {mod}")
             pass

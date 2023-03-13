@@ -1,14 +1,18 @@
 import boto3, inquirer, sys, json, argparse
 from .utils import *
 
-def args_definitions(subparser):
+def subparser_args_definitions(subparser):
     sub_subparser = subparser.add_parser('get_ec2_ecs_info', help='help for getting EC2 info from ecs')
     #required
-    # sub_subparser.add_argument("--ta","--targetaddress",dest="TargetAddress",help="REQUIRED: The Amazon Resource Name (ARN) of the Chatbot topic or Chatbot client.", required = True)
+    args_definitions(sub_subparser)
+
+def args_definitions(parser):
+    #required
+    # parser.add_argument("--ta","--targetaddress",dest="TargetAddress",help="REQUIRED: The Amazon Resource Name (ARN) of the Chatbot topic or Chatbot client.", required = True)
     #optional
-    sub_subparser.add_argument("--c','--cluster",default='', dest="Cluster",help="Cluster to filter by")
-    sub_subparser.add_argument("--t','--taskname",dest="Task",help="Service Name to use to get EC2 information")
-    # sub_subparser.add_argument("--c','--cluster",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
+    parser.add_argument("--c','--cluster",default='', dest="Cluster",help="Cluster to filter by")
+    parser.add_argument("--t','--taskname",dest="Task",help="Service Name to use to get EC2 information")
+    # parser.add_argument("--c','--cluster",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
 
 def run(args):
     if not args.Task:
@@ -101,9 +105,7 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser()
 
-    subparser = parser.add_subparsers(dest="Module",title='Modules',description='List of Modules',help='List of modules')
-
-    args_definitions(subparser)
+    args_definitions(parser)
 
     args = parser.parse_args()
 
