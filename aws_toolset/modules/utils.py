@@ -38,13 +38,17 @@ def get_all_resource_names(resource_name,resource_call,options = {}):
             resource_list = 'containerInstanceArns'
             resource_key = 'containerInstance'
             paginator = client.get_paginator('list_container_instances',cluster=options['cluster'])
+        case "ecs_tasks":
+            resource_list = 'taskArns'
+            resource_key = 'tasks'
+            paginator = client.get_paginator('list_tasks',cluster=options['cluster'])
         case _:
             raise ValueError(f"Invalid resource type '{resource_name}'")
 
     all_resources_names = []
 
     for page in paginator.paginate():
-        if not resource_name == 'codebuild' and not resource_name == 'codedeploy' and not resource_name == 'ecs_clusters' and not resource_name == 'ecs_services' and not resource_name == "ecs_container_instances":
+        if not resource_name == 'codebuild' and not resource_name == 'codedeploy' and not resource_name == 'ecs_clusters' and not resource_name == 'ecs_services' and not resource_name == "ecs_container_instances" and not resource_name == "ecs_tasks":
                 all_resources_names.extend([resource[resource_key] for resource in page[resource_list]])
         else:
             all_resources_names.extend(page[resource_list])

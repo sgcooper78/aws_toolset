@@ -7,11 +7,11 @@ def args_definitions(subparser):
     # sub_subparser.add_argument("--ta","--targetaddress",dest="TargetAddress",help="REQUIRED: The Amazon Resource Name (ARN) of the Chatbot topic or Chatbot client.", required = True)
     #optional
     sub_subparser.add_argument("--c','--cluster",default='', dest="Cluster",help="Cluster to filter by")
-    sub_subparser.add_argument("--s','--servicename",dest="Service",help="Service Name to use to get EC2 information")
+    sub_subparser.add_argument("--t','--taskname",dest="Task",help="Service Name to use to get EC2 information")
     # sub_subparser.add_argument("--c','--cluster",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
 
 def run(args):
-    if not args.Service:
+    if not args.Task:
         if not args.Cluster:
             print("no user resource detected for cluster, helping user generate them")
             clusters = get_all_resource_names("ecs","ecs_clusters")
@@ -33,11 +33,11 @@ def run(args):
             sys.exit("No Cluster detected")
 
         further_filter_question = [
-            inquirer.Confirm("filter", message=f"Would you like to filter down Services further than all in the cluster?", default=False),
+            inquirer.Confirm("filter", message=f"Would you like to filter down Tasks further than all in the cluster?", default=False),
         ]
         further_filter_bool = inquirer.prompt(further_filter_question)
 
-        services = []
+        tasks = []
         if further_filter_bool["filter"]:
             further_filter_resources_questions = [
                 inquirer.List(
@@ -53,25 +53,25 @@ def run(args):
             filter_resources = inquirer.prompt(further_filter_resources_questions)
                 
             if filter_resources["choice"] == "resource_name":
-                services = get_sort_resources_by_regex("ecs","ecs_services",filter_resources["filter_value"],{"cluster" : args.Cluster})
+                tasks = get_sort_resources_by_regex("ecs","ecs_tasks",filter_resources["filter_value"],{"cluster" : args.Cluster})
             elif filter_resources["choice"] == "tags":
-                services = get_sort_resources_by_tag("ecs","ecs_services",json.loads(filter_resources["filter_value"]),{"cluster" : args.Cluster})
+                tasks = get_sort_resources_by_tag("ecs","ecs_tasks",json.loads(filter_resources["filter_value"]),{"cluster" : args.Cluster})
             else:
-                services = get_all_resource_names("ecs","ecs_services",{"cluster" : args.Cluster})
-            print(services)
+                tasks = get_all_resource_names("ecs","ecs_tasks",{"cluster" : args.Cluster})
+            print(tasks)
         else:
-            services = get_all_resource_names("ecs","ecs_services", args.Cluster)
+            tasks = get_all_resource_names("ecs","ecs_tasks", args.Cluster)
 
-        service_question = [
+        task_question = [
             inquirer.List(
-                "service",
-                message="What Service would you like info about?",
-                choices=services,
+                "task",
+                message="What Task's would you like info about?",
+                choices=tasks,
             ),
         ]
 
-        answers_service = inquirer.prompt(service_question)
-        args.Service =  answers_service["clusters"]
+        answers_task = inquirer.prompt(task_question)
+        args.Task =  answers_task["task"]
 
     print(args.Service)
 
@@ -86,17 +86,10 @@ def run(args):
     tasks = []
     for instance in ec2_container_instances['containerInstances']:
         if instance['ec2InstanceId'] == "EC2":
-
-            # List tasks on this container instance
-            task_list_response = ecs_client.list_tasks(
-                cluster=args.Cluster,
-                containerInstance=instance['containerInstanceArn']
-            )
-
             # Describe tasks
             task_descriptions_response = ecs_client.describe_tasks(
                 cluster=args.Cluster,
-                tasks=task_list_response['taskArns']
+                tasks=args.Task
             )
 
             tasks.append(task_descriptions_response)
