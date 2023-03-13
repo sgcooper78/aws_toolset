@@ -33,25 +33,31 @@ def get_all_resource_names(resource_name,resource_call,options = {}):
         case "ecs_services":
             resource_list = 'serviceArns'
             resource_key = 'service'
-            paginator = client.get_paginator('list_services',cluster=options['cluster'])
+            paginator = client.get_paginator('list_services')
         case "ecs_container_instances":
             resource_list = 'containerInstanceArns'
             resource_key = 'containerInstance'
-            paginator = client.get_paginator('list_container_instances',cluster=options['cluster'])
+            paginator = client.get_paginator('list_container_instances')
         case "ecs_tasks":
             resource_list = 'taskArns'
             resource_key = 'tasks'
-            paginator = client.get_paginator('list_tasks',cluster=options['cluster'])
+            paginator = client.get_paginator('list_tasks')
         case _:
             raise ValueError(f"Invalid resource type '{resource_name}'")
 
     all_resources_names = []
-
-    for page in paginator.paginate():
-        if not resource_name == 'codebuild' and not resource_name == 'codedeploy' and not resource_name == 'ecs_clusters' and not resource_name == 'ecs_services' and not resource_name == "ecs_container_instances" and not resource_name == "ecs_tasks":
-                all_resources_names.extend([resource[resource_key] for resource in page[resource_list]])
-        else:
-            all_resources_names.extend(page[resource_list])
+    if resource_name == "ecs" and not resource_call == "ecs_clusters":
+        for page in paginator.paginate(cluster=options['cluster']):
+            if not resource_call == 'ecs_services' and not resource_call == "ecs_container_instances" and not resource_call == "ecs_tasks":
+                    all_resources_names.extend([resource[resource_key] for resource in page[resource_list]])
+            else:
+                all_resources_names.extend(page[resource_list])
+    else:
+        for page in paginator.paginate():
+            if not resource_call == 'codebuild' and not resource_call == 'codedeploy' and not resource_call == "ecs_clusters":
+                    all_resources_names.extend([resource[resource_key] for resource in page[resource_list]])
+            else:
+                all_resources_names.extend(page[resource_list])
 
     return all_resources_names
 

@@ -1,5 +1,5 @@
 import boto3, inquirer, sys, json, argparse
-from utils import *
+from .utils import *
 
 def args_definitions(subparser):
     sub_subparser = subparser.add_parser('create_codestar_notifications', help='help for creating codestar notifications')

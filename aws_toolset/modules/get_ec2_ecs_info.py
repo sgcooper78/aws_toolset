@@ -1,5 +1,5 @@
 import boto3, inquirer, sys, json, argparse
-from utils import *
+from .utils import *
 
 def args_definitions(subparser):
     sub_subparser = subparser.add_parser('get_ec2_ecs_info', help='help for getting EC2 info from ecs')
@@ -26,7 +26,7 @@ def run(args):
             ]
 
             answers_cluster = inquirer.prompt(cluster_questions)
-            args.Cluster =  answers_cluster["clusters"]
+            args.Cluster =  answers_cluster["cluster"]
         
         print(args.Cluster)
         if not args.Cluster:
@@ -60,7 +60,7 @@ def run(args):
                 tasks = get_all_resource_names("ecs","ecs_tasks",{"cluster" : args.Cluster})
             print(tasks)
         else:
-            tasks = get_all_resource_names("ecs","ecs_tasks", args.Cluster)
+            tasks = get_all_resource_names("ecs","ecs_tasks",{"cluster" : args.Cluster})
 
         task_question = [
             inquirer.List(
@@ -73,8 +73,6 @@ def run(args):
         answers_task = inquirer.prompt(task_question)
         args.Task =  answers_task["task"]
 
-    print(args.Service)
-
     ec2_container_instances_arns = get_all_resource_names("ecs","ecs_container_instances",{"cluster" : args.Cluster})
 
     ecs_client = boto3.client('ecs')
@@ -85,14 +83,19 @@ def run(args):
     )
     tasks = []
     for instance in ec2_container_instances['containerInstances']:
-        if instance['ec2InstanceId'] == "EC2":
             # Describe tasks
-            task_descriptions_response = ecs_client.describe_tasks(
-                cluster=args.Cluster,
-                tasks=args.Task
-            )
 
-            tasks.append(task_descriptions_response)
+        t_list_response = ecs_client.list_tasks(
+            cluster=args.Cluster,
+            containerInstance=instance['containerInstanceArn']
+        )
+
+        task_descriptions_response = ecs_client.describe_tasks(
+            cluster=args.Cluster,
+            tasks=t_list_response['taskArns']
+        )
+
+        tasks.append(task_descriptions_response)
     print(tasks)
 
 def main():
