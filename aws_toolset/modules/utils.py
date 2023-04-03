@@ -136,3 +136,10 @@ def get_sort_resources_by_tag(service_name, tags_dict, options = {}):
                 resources_with_tags.append(pipeline['name'])
     
     return resources_with_tags
+
+def get_default_profile_region():
+    # Create a Boto3 session object
+    session = boto3.session.Session()
+
+    # Get the default region for the current profile
+    return session.region_name
