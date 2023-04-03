@@ -1,7 +1,5 @@
-import boto3, inquirer, sys, json, argparse, subprocess
+import boto3, inquirer, sys, json, argparse, os
 from .utils import *
-
-ecs_client = ''
 
 def subparser_args_definitions(subparser):
     sub_subparser = subparser.add_parser('generate_ecs_execute_command', help='generate aws ecs execute-command for you')
@@ -31,15 +29,32 @@ def list_clusters():
     return all_resources_names
 
 def list_tasks(cluster):
-    paginator = ecs_client.get_paginator('list_tasks',cluster=cluster)
+    paginator = ecs_client.get_paginator('list_tasks')
 
     all_resources_names = []
-    for page in paginator.paginate():
+    for page in paginator.paginate(cluster=cluster):
         all_resources_names.extend(page["taskArns"])
 
     return all_resources_names
 
-def describe_task(cluster,taskid):
+def list_tasks_with_containers(cluster,taskids):
+    
+    response = ecs_client.describe_tasks(
+        cluster=cluster,
+        tasks=taskids
+    )
+    container_names = {}
+    for task in response['tasks']:
+        task_id = task['taskArn']
+        container_name = next(iter(task['containers']))['name']
+        container_names[task_id] = {
+            'task_id': task_id,
+            'container_name': container_name
+        }
+    return container_names
+
+
+def describe_task_container_name(cluster,taskid):
     
     response = ecs_client.describe_tasks(
         cluster=cluster,
@@ -58,6 +73,7 @@ def run(args):
         print("no region detected, using default profile region")
         args.Region = get_default_profile_region()
         print(args.Region)
+    global ecs_client
     ecs_client = boto3.client('ecs', region_name=args.Region)
     if not args.Cluster:
         print("no user resource detected for cluster, helping user generate them")
@@ -81,38 +97,43 @@ def run(args):
     if not args.TaskId:
         print("no user resource detected for Task ID, helping user generate them")
         tasks = list_tasks(args.Cluster)
+        task_choices = [f"{task['task_id']} ({task['container_name']})" for task in list_tasks_with_containers(args.Cluster,tasks).values()]
         # if not args.Cluster:
         #     sys.exit("No Clusters detected")
         task_questions = [
             inquirer.List(
                 "task",
                 message="What task would you like to use?",
-                choices=tasks,
+                choices=task_choices,
             ),
         ]
 
         answers_task = inquirer.prompt(task_questions)
-        args.TaskId =  answers_task["task"]
-        
+        args.TaskId = str(answers_task['task']).split(" ")[0]
+
         print(args.TaskId)
         if not args.TaskId:
             sys.exit("No Task ID detected")
     
     if not args.ContainerName:
         print("no user resource detected for Container Name, helping user generate them")
-        container_names = list_tasks(args.Cluster,args.TaskId)
+        container_names = describe_task_container_name(args.Cluster,args.TaskId)
         # if not args.Cluster:
         #     sys.exit("No Clusters detected")
-        container_questions = [
-            inquirer.List(
-                "container",
-                message="What container would you like to use?",
-                choices=container_names,
-            ),
-        ]
+        if len(container_names) != 1:
+            container_questions = [
+                inquirer.List(
+                    "container",
+                    message="What container would you like to use?",
+                    choices=container_names,
+                ),
+            ]
 
-        answers_container = inquirer.prompt(container_questions)
-        args.ContainerName =  answers_container["container"]
+            answers_container = inquirer.prompt(container_questions)
+            args.ContainerName =  answers_container["container"]
+        else:
+            print(f"Only one Container Detected, Container name used will be {container_names[0]}")
+            args.ContainerName = container_names[0]
         
         print(args.ContainerName)
         if not args.ContainerName:
@@ -132,15 +153,11 @@ def run(args):
         if not args.Command:
             sys.exit("No Command name detected")
 
-    interactive_command = "--interactive" if args.interactive else "--non-interactive"
-    Command = f'aws ecs execute-command --cluster {args.Cluster} --task {args.TaskId} --container {args.ContainerName} {interactive_command} --command {args.Command} --region {args.Region}'
+    # interactive_command = "--interactive" if args.interactive else "--non-interactive"
+    Command = f'aws ecs execute-command --cluster {args.Cluster} --task {args.TaskId} --container {args.ContainerName} --interactive --command {args.Command} --region {args.Region}'
     print(Command)
     # Run the command and open a Bash shell
-    process = subprocess.Popen(Command)
-
-    # Wait for the process to complete
-    process.wait()
-
+    os.system(Command)
 
 def main():
     parser = argparse.ArgumentParser()
