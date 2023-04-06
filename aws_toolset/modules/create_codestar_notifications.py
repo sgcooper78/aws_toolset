@@ -1,18 +1,22 @@
-import boto3, inquirer, sys, json
+import boto3, inquirer, sys, json, argparse
 from .utils import *
 
-def args_definitions(subparser):
+def subparser_args_definitions(subparser):
     sub_subparser = subparser.add_parser('create_codestar_notifications', help='help for creating codestar notifications')
     #required
-    sub_subparser.add_argument("--ta","--targetaddress",dest="TargetAddress",help="REQUIRED: The Amazon Resource Name (ARN) of the Chatbot topic or Chatbot client.", required = True)
-    sub_subparser.add_argument("--tt','--targettype",dest="TargetType", choices=['SNS', 'AWSChatbotSlack'],help="REQUIRED: The target type. Can be an Chatbot topic or Chatbot client. The options are SNS or AWSChatbotSlack", required = True)
+    args_definitions(sub_subparser)
+
+def args_definitions(parser):
+    #required
+    parser.add_argument("--ta","--targetaddress",dest="TargetAddress",help="REQUIRED: The Amazon Resource Name (ARN) of the Chatbot topic or Chatbot client.", required = True)
+    parser.add_argument("--tt','--targettype",dest="TargetType", choices=['SNS', 'AWSChatbotSlack'],help="REQUIRED: The target type. Can be an Chatbot topic or Chatbot client. The options are SNS or AWSChatbotSlack", required = True)
     #optional
-    sub_subparser.add_argument("--n","--name",dest="Name" ,help="The name for the notification rule. Notification rule names must be unique in your Amazon Web Services account.")
-    sub_subparser.add_argument("--eti","--eventtypeids", dest="EventTypeIds",help="Should be a list of all accepted notification events. See https://docs.aws.amazon.com/dtconsole/latest/userguide/concepts.html#concepts-api")
-    sub_subparser.add_argument("--dt','--detailtype",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
-    sub_subparser.add_argument("-r", "--resource", dest="Resource", help="either the full arn of the resource. If we are helping you build this list, leave blank")
-    sub_subparser.add_argument("-t", "--tags" ,default={},help="A list(dict) of tags to apply to this notification rule. Key names cannot start with aws")
-    sub_subparser.add_argument("-s", "--status", default='ENABLED',choices=['ENABLED', 'DISABLED'],help="The status of the notification rule. The default value is ENABLED . If the status is set to DISABLED , notifications aren't sent for the notification rule.")
+    parser.add_argument("--n","--name",dest="Name" ,help="The name for the notification rule. Notification rule names must be unique in your Amazon Web Services account.")
+    parser.add_argument("--eti","--eventtypeids", dest="EventTypeIds",help="Should be a list of all accepted notification events. See https://docs.aws.amazon.com/dtconsole/latest/userguide/concepts.html#concepts-api")
+    parser.add_argument("--dt','--detailtype",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
+    parser.add_argument("-r", "--resource", dest="Resource", help="either the full arn of the resource. If we are helping you build this list, leave blank")
+    parser.add_argument("-t", "--tags" ,default={},help="A list(dict) of tags to apply to this notification rule. Key names cannot start with aws")
+    parser.add_argument("-s", "--status", default='ENABLED',choices=['ENABLED', 'DISABLED'],help="The status of the notification rule. The default value is ENABLED . If the status is set to DISABLED , notifications aren't sent for the notification rule.")
 
 #possible resources
 # codecommit / codebuild / codedeploy / codepipeline
@@ -96,7 +100,7 @@ def make_codestar_notifications(name: str, event_type_ids: list, resource: str, 
 
     return response['Arn']
 
-def main(args):
+def run(args):
     main_resource = ''
     if not args.Resource:
         print("no user resource detected, helping user generate them")
@@ -175,5 +179,14 @@ def main(args):
     print("here is all the arns of the notifications")
     print(codestar_notifications_arns)
 
+def main():
+    parser = argparse.ArgumentParser()
+
+    args_definitions(parser)
+
+    args = parser.parse_args()
+
+    run(args)
+
 if __name__ == "__main__":
-    main(args)
+    main()

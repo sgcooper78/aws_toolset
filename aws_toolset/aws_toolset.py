@@ -1,12 +1,17 @@
-import argparse, importlib
+import argparse
 import importlib.util
 
 #Module Imports 
-from .modules import create_codestar_notifications
+from modules import create_codestar_notifications
+from modules import get_ec2_ecs_info
+from modules import generate_ecs_execute_command
 
 def create_dict_modules():
     modules = {}
     modules["create_codestar_notifications"] = create_codestar_notifications
+    modules["get_ec2_ecs_info"] = get_ec2_ecs_info
+    modules["generate_ecs_execute_command"] = generate_ecs_execute_command
+
     return modules
 
 def parameters_definitions(parser):
@@ -15,7 +20,7 @@ def parameters_definitions(parser):
 
     for module in modules:
         try:
-            modules[module].args_definitions(parser)
+            modules[module].subparser_args_definitions(parser)
         except AttributeError:
             # print(f"There is no such attribute for {mod}")
             pass
@@ -34,9 +39,9 @@ def main():
     modules = create_dict_modules()
 
     try:
-        modules[args.Module].main(args)
+        modules[args.Module].run(args)
     except AttributeError:
-        print(f"There is no such attribute for {module}")
+        print(f"There is no such attribute for {modules[args.Module]}")
 
 if __name__ == "__main__":
     main()
