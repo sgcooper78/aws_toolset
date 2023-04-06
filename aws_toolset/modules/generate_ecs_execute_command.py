@@ -10,13 +10,12 @@ def args_definitions(parser):
     #required
     # parser.add_argument("--ta","--targetaddress",dest="TargetAddress",help="REQUIRED: The Amazon Resource Name (ARN) of the Chatbot topic or Chatbot client.", required = True)
     #optional
-    parser.add_argument("--c','--cluster",default='', dest="Cluster",help="The Amazon Resource Name (ARN) or short name of the cluster the task is running in. If you do not specify a cluster, the default cluster is assumed.")
-    parser.add_argument("--t','--taskid",dest="TaskId",help="The Amazon Resource Name (ARN) or ID of the task the container is part of.")
-    parser.add_argument("--cn','--container-name",dest="ContainerName",help="The Amazon Resource Name (ARN) or ID of the task the container is part of.")
-    parser.add_argument("--i','--interactive",dest="Interactive", action='store_true',help="Use this flag to run your command in interactive mode.")
-    parser.add_argument("--ni','--non-interactive",dest="NonInteractive", action='store_true',help="Use this flag to run your command in interactive mode.")
-    parser.add_argument("--cmd','--command",dest="Command",help="The command to run on the container.")
-    parser.add_argument("--r','--region",dest="Region",help="The Region to use")
+    parser.add_argument("--c","--cluster",default='', dest="Cluster",help="The Amazon Resource Name (ARN) or short name of the cluster the task is running in. If you do not specify a cluster, the default cluster is assumed.")
+    parser.add_argument("--t","--taskid",dest="TaskId",help="The Amazon Resource Name (ARN) or ID of the task the container is part of.")
+    parser.add_argument("--cn","--container-name",dest="ContainerName",help="The Amazon Resource Name (ARN) or ID of the task the container is part of.")
+    parser.add_argument("--i","--interactive",dest="Interactive", action='store_true',help="Use this flag to run your command in interactive mode.")
+    parser.add_argument("--cmd","--command",dest="Command",help="The command to run on the container.")
+    parser.add_argument("--r","--region",dest="Region",help="The Region to use")
     # parser.add_argument("--c','--cluster",default='FULL', dest="DetailType", choices=['BASIC', 'FULL'],help="The level of detail to include in the notifications for this resource.")
 
 def list_clusters():
@@ -37,6 +36,15 @@ def list_tasks(cluster):
 
     return all_resources_names
 
+def list_services(cluster):
+    paginator = ecs_client.get_paginator('list_services')
+
+    all_resources_names = []
+    for page in paginator.paginate(cluster=cluster):
+        all_resources_names.extend(page["serviceArns"])
+
+    return all_resources_names
+
 def list_tasks_with_containers(cluster,taskids):
     
     response = ecs_client.describe_tasks(
@@ -53,6 +61,13 @@ def list_tasks_with_containers(cluster,taskids):
         }
     return container_names
 
+def describe_services(cluster,services):
+    
+    response = ecs_client.describe_services(
+        cluster=cluster,
+        services=services
+    )
+    return response
 
 def describe_task_container_name(cluster,taskid):
     
@@ -68,6 +83,42 @@ def describe_task_container_name(cluster,taskid):
         container_names.append(container['name'])
     return container_names
 
+def get_tasks(cluster,service_name):
+    response = ecs_client.list_tasks(cluster=cluster, serviceName=service_name)
+    tasks = response['taskArns']
+
+    task_ids = []
+    for task_arn in tasks:
+        task_ids.append(task_arn.split("/")[-1])
+    return task_ids
+
+def question_single_list(list,type):
+    cluster_questions = [
+        inquirer.List(
+            "answer",
+            message=f"What {type} would you like to use?",
+            choices=list,
+        ),
+    ]
+
+    answers_cluster = inquirer.prompt(cluster_questions)
+    return answers_cluster["answer"]
+
+def question_single_confirm(Text,default):
+    questions = [
+        inquirer.Confirm("Confirm", message=Text,default=default),
+    ]
+    answers = inquirer.prompt(questions)
+    return answers["Confirm"]
+
+def question_single_text(Text):
+    questions = [
+        inquirer.Text("Text", message=Text),
+    ]
+
+    answers = inquirer.prompt(questions)
+    return answers['Text']
+
 def run(args):
     if not args.Region:
         print("no region detected, using default profile region")
@@ -77,41 +128,28 @@ def run(args):
     ecs_client = boto3.client('ecs', region_name=args.Region)
     if not args.Cluster:
         print("no user resource detected for cluster, helping user generate them")
-        clusters = list_clusters()
-        # if not args.Cluster:
-        #     sys.exit("No Clusters detected")
-        cluster_questions = [
-            inquirer.List(
-                "cluster",
-                message="What Cluster would you like to use?",
-                choices=clusters,
-            ),
-        ]
 
-        answers_cluster = inquirer.prompt(cluster_questions)
-        args.Cluster =  answers_cluster["cluster"]
+        args.Cluster =  question_single_list(list_clusters(),"Cluster")
         
-        print(args.Cluster)
+        print(f"{args.Cluster} has been chosen")
         if not args.Cluster:
             sys.exit("No Cluster detected")
     if not args.TaskId:
         print("no user resource detected for Task ID, helping user generate them")
-        tasks = list_tasks(args.Cluster)
-        task_choices = [f"{task['task_id']} ({task['container_name']})" for task in list_tasks_with_containers(args.Cluster,tasks).values()]
-        # if not args.Cluster:
-        #     sys.exit("No Clusters detected")
-        task_questions = [
-            inquirer.List(
-                "task",
-                message="What task would you like to use?",
-                choices=task_choices,
-            ),
-        ]
 
-        answers_task = inquirer.prompt(task_questions)
-        args.TaskId = str(answers_task['task']).split(" ")[0]
+        args.Service = question_single_list(list_services(args.Cluster),"Service")
 
-        print(args.TaskId)
+        task_ids = get_tasks(args.Cluster,args.Service)
+
+        # print(task_ids)
+        if len(task_ids) > 1:
+            args.TaskId =  question_single_list(task_ids,"Task")
+        elif len(task_ids) == 1:
+            print(f"Only one task detected, you will be using {task_ids[0]}")
+            args.TaskId = task_ids[0]
+        else:
+            sys.exit("No Tasks detected, exiting...")
+
         if not args.TaskId:
             sys.exit("No Task ID detected")
     
@@ -121,18 +159,9 @@ def run(args):
         # if not args.Cluster:
         #     sys.exit("No Clusters detected")
         if len(container_names) != 1:
-            container_questions = [
-                inquirer.List(
-                    "container",
-                    message="What container would you like to use?",
-                    choices=container_names,
-                ),
-            ]
-
-            answers_container = inquirer.prompt(container_questions)
-            args.ContainerName =  answers_container["container"]
+            args.ContainerName =  question_single_list(describe_task_container_name(args.Cluster,args.TaskId),"Container")
         else:
-            print(f"Only one Container Detected, Container name used will be {container_names[0]}")
+            print(f"Only one Container Detected, Container name {container_names[0]} will be used")
             args.ContainerName = container_names[0]
         
         print(args.ContainerName)
@@ -141,23 +170,20 @@ def run(args):
 
     if not args.Command:
         print("no user resource detected for Command, helping user generate them")
-        # if not args.Cluster:
-        #     sys.exit("No Clusters detected")
-        questions = [
-            inquirer.Text("Command", message="Please enter your command"),
-        ]
-
-        answers = inquirer.prompt(questions)
-        args.Command = answers['Command']
-        print(args.Command)
+        args.Command = question_single_text("Please enter your command")
+        
         if not args.Command:
             sys.exit("No Command name detected")
+        else:
+            print(f"{args.Command} has been chosen as the command")
 
-    # interactive_command = "--interactive" if args.interactive else "--non-interactive"
-    Command = f'aws ecs execute-command --cluster {args.Cluster} --task {args.TaskId} --container {args.ContainerName} --interactive --command {args.Command} --region {args.Region}'
-    print(Command)
-    # Run the command and open a Bash shell
-    os.system(Command)
+    interactive_command = "--interactive" if args.Interactive else "--non-interactive"
+    command_to_run = f'aws ecs execute-command --cluster {args.Cluster} --task {args.TaskId} --container {args.ContainerName} {interactive_command} --command {args.Command} --region {args.Region}'
+    print(command_to_run)
+
+    if question_single_confirm(f"Do you want to run the command {command_to_run}?",True):
+        # Run the command and open a Bash shell
+        os.system(command_to_run)
 
 def main():
     parser = argparse.ArgumentParser()
