@@ -16,7 +16,7 @@ def args_definitions(parser):
     #optional
     parser.add_argument("--c","--cluster",default='', dest="Cluster",help="The Amazon Resource Name (ARN) or short name of the cluster the task is running in. If you do not specify a cluster, the default cluster is assumed.")
     parser.add_argument("--t","--taskid",dest="TaskId",help="The Amazon Resource Name (ARN) or ID of the task the container is part of.")
-    parser.add_argument("--cn","--container-name",dest="ContainerName",help="The Amazon Resource Name (ARN) or ID of the task the container is part of.")
+    parser.add_argument("--cn","--container-name",dest="ContainerName",help="The name of the container to execute the command on.")
     parser.add_argument("--i","--interactive",dest="Interactive", action='store_true',help="Use this flag to run your command in interactive mode.")
     parser.add_argument("--cmd","--command",dest="Command",help="The command to run on the container.")
     parser.add_argument("--r","--region",dest="Region",help="The Region to use")
