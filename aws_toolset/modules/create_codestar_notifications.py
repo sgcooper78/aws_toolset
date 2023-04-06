@@ -1,5 +1,9 @@
 import boto3, inquirer, sys, json, argparse
-from .utils import *
+
+try:
+    from utils import *
+except ModuleNotFoundError:
+    from .utils import *
 
 def subparser_args_definitions(subparser):
     sub_subparser = subparser.add_parser('create_codestar_notifications', help='help for creating codestar notifications')
