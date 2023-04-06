@@ -1,5 +1,9 @@
-import boto3, inquirer, sys, json, argparse, os
-from .utils import *
+import boto3, inquirer, sys, argparse, os
+
+try:
+    from utils import *
+except ModuleNotFoundError:
+    from .utils import *
 
 def subparser_args_definitions(subparser):
     sub_subparser = subparser.add_parser('generate_ecs_execute_command', help='generate aws ecs execute-command for you')
