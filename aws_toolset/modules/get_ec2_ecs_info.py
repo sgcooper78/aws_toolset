@@ -1,5 +1,5 @@
 import boto3, sys, argparse
-from prettyprinter import pprint
+from pprint import pprint
 
 try:
     from utils import *
