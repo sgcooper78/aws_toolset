@@ -1,4 +1,4 @@
-import boto3, re
+import boto3, re, inquirer
 
 def get_account_id():
     sts_client = boto3.client("sts")
@@ -143,3 +143,30 @@ def get_default_profile_region():
 
     # Get the default region for the current profile
     return session.region_name
+
+def question_single_list(list,type):
+    cluster_questions = [
+        inquirer.List(
+            "answer",
+            message=f"What {type} would you like to use?",
+            choices=list,
+        ),
+    ]
+
+    answers_cluster = inquirer.prompt(cluster_questions)
+    return answers_cluster["answer"]
+
+def question_single_confirm(Text,default):
+    questions = [
+        inquirer.Confirm("Confirm", message=Text,default=default),
+    ]
+    answers = inquirer.prompt(questions)
+    return answers["Confirm"]
+
+def question_single_text(Text):
+    questions = [
+        inquirer.Text("Text", message=Text),
+    ]
+
+    answers = inquirer.prompt(questions)
+    return answers['Text']
