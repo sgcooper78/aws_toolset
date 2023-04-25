@@ -13,7 +13,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=find_packages(),
-    install_requires=['boto3', 'inquirer'],
+    install_requires=['boto3', 'inquirer', 'pprint'],
     keywords=['python', 'aws', 'boto3'],
     classifiers=[
     "Programming Language :: Python :: 3",
