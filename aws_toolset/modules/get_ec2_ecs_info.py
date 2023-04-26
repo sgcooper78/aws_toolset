@@ -123,7 +123,7 @@ def run(args):
         cluster=args.Cluster,
         containerInstances=ec2_container_instances_arns
     )
-
+    
     for instance in ec2_container_instances['containerInstances']:
             # Describe tasks
         instance['tasks'] = []
@@ -134,6 +134,9 @@ def run(args):
             containerInstance=instance['containerInstanceArn']
         )
 
+        if not t_list_response['taskArns']:
+            continue
+        
         task_descriptions_response = ecs_client.describe_tasks(
             cluster=args.Cluster,
             tasks=t_list_response['taskArns']
