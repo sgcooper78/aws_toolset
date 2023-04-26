@@ -5,7 +5,7 @@ with open('README.md') as fh:
 
 setup(
     name="aws_toolset",
-    version="0.0.4",
+    version="0.0.6",
     url='https://github.com/sgcooper78/aws_toolset',
     author="Scott Cooper",
     author_email="sgcooper78@gmail.com",

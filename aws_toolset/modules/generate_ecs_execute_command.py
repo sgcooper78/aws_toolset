@@ -1,4 +1,4 @@
-import boto3, inquirer, sys, argparse, os
+import boto3, sys, argparse, os
 
 try:
     from utils import *
@@ -95,33 +95,6 @@ def get_tasks(cluster,service_name):
     for task_arn in tasks:
         task_ids.append(task_arn.split("/")[-1])
     return task_ids
-
-def question_single_list(list,type):
-    cluster_questions = [
-        inquirer.List(
-            "answer",
-            message=f"What {type} would you like to use?",
-            choices=list,
-        ),
-    ]
-
-    answers_cluster = inquirer.prompt(cluster_questions)
-    return answers_cluster["answer"]
-
-def question_single_confirm(Text,default):
-    questions = [
-        inquirer.Confirm("Confirm", message=Text,default=default),
-    ]
-    answers = inquirer.prompt(questions)
-    return answers["Confirm"]
-
-def question_single_text(Text):
-    questions = [
-        inquirer.Text("Text", message=Text),
-    ]
-
-    answers = inquirer.prompt(questions)
-    return answers['Text']
 
 def run(args):
     if not args.Region:
